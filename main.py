@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from random import randrange
 
@@ -5,13 +7,14 @@ from matplotlib import pyplot as plt
 
 import bezier
 from parameterize import parameterize
+from visualizer import experiment_show
 
 """
     EXPERIMENT PARAMETERS
 """
 
 n = 4  # amount of data points
-d = n  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
+d = 3  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
 
 rb = 10  # Bounds for random data points
 
@@ -35,8 +38,8 @@ parameters_chordal = parameterize(data_points, 1)
 """
 
 # find control points
-control_points_uniform = bezier.fit(data_points, parameters_uniform, d)
-control_points_chordal = bezier.fit(data_points, parameters_chordal, d)
+control_points_uniform, error_uniform = bezier.fit(data_points, parameters_uniform, d)
+control_points_chordal, error_chordal = bezier.fit(data_points, parameters_chordal, d)
 
 # sample polynomial
 samples = np.linspace(0, 1, 8 * n)  # 8 samples per segment
@@ -51,48 +54,10 @@ fitted_bezier_chordal = np.array(
     PLOTTING
 """
 
-r_color = 'orange'  # raw curve color
-f1_color = 'aqua'  # fitted curve 1 color
-f2_color = 'm'  # fitted curve 2 color
-
-plt.gca().set_facecolor('k')
-
-
-# RAW DATA POINTS POLYGON
-plt.scatter(data_points[:, 0], data_points[:, 1], label="Data Points", alpha=0.6, color=r_color)
-plt.plot(data_points[:, 0], data_points[:, 1], linestyle="--", alpha=0.2, color=r_color)
-
-# RAW BEZIER CURVE
-# plt.plot(raw_bezier[:, 0], raw_bezier[:, 1], label="Raw Bezier Curve", color=r_color)
-
-
-# UNIFORM PARAMETERIZATION
-
-# fitted control points polygon
-# plt.scatter(control_points_uniform[:,0],control_points_uniform[:,1],
-#             label="Control Points", alpha=0.2, color=f1_color)
-# plt.plot(control_points_uniform[:,0],control_points_uniform[:,1],
-#          linestyle="--", alpha=0.1, color=f1_color)
-
-# fitted bezier curve
-plt.plot(fitted_bezier_uniform[:, 0], fitted_bezier_uniform[:, 1],
-         label="Uniform", color=f1_color)
-
-# CHORDAL PARAMETERIZATION
-
-# fitted control points polygon
-# plt.scatter(control_points_chordal[:, 0], control_points_chordal[:, 1],
-#             label="Control Points", alpha=0.2, color=f2_color)
-# plt.plot(control_points_chordal[:, 0], control_points_chordal[:, 1],
-#          linestyle="--", alpha=0.1, color=f2_color)
-
-# fitted bezier curve
-plt.plot(fitted_bezier_chordal[:, 0], fitted_bezier_chordal[:, 1],
-         label="Chordal", color=f2_color)
-
-# PLOTTING
-
-plt.title("Fitted Bézier Curves")
-plt.tight_layout()
-plt.legend()
-plt.show()
+experiment_show(
+    data_points,
+    fitted_bezier_uniform,
+    error_uniform,
+    fitted_bezier_chordal,
+    error_chordal
+)
