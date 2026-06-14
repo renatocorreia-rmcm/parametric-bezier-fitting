@@ -3,11 +3,11 @@ import numpy as np
 from bernstein import get_coefficients_matrix
 
 
-def bezier_interpolation(cps, t):
+def interpolate(cps, t):
     if len(cps) == 1:
         return cps[0]
 
-    return (1 - t) * bezier_interpolation(cps[:-1], t) + t * bezier_interpolation(cps[1:], t)
+    return (1 - t) * interpolate(cps[:-1], t) + t * interpolate(cps[1:], t)
 
 
 def fit(data_points, parameters, d):
@@ -28,4 +28,4 @@ def fit(data_points, parameters, d):
 
     elif n != d:
         # (A^T) * A * c = (A^T) * d
-        return np.linalg.solve(A.T @ A, A.T @ d)
+        return np.linalg.solve(A.T @ A, A.T @ data_points)
