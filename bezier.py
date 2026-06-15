@@ -14,7 +14,7 @@ def fit(data_points, parameters, d):
     """
     fit a `d` degree Bézier curve to a sequence of Data Points
 
-    :return: control points, error
+    :return: control points, error, coefficients matrix
     """
 
     n = len(data_points)  # amount of data points
@@ -32,3 +32,5 @@ def fit(data_points, parameters, d):
 
         control_points = np.linalg.solve(A.T @ A, A.T @ data_points)
         return control_points, np.linalg.norm((A@control_points)-data_points, axis=0)
+
+    return None

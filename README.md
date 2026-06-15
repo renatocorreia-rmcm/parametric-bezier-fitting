@@ -1,4 +1,4 @@
-> Aproximação de uma curva de Bézier paramétrica de grau arbitrário (n) a um conjunto de
+'> Aproximação de uma curva de Bézier paramétrica de grau arbitrário (n) a um conjunto de
 pontos aleatórios. Coloque um slide-button (variável p) para controlar o número de pontos
 (que será igual a p+1, p>3) a serem aproximados pela curva de Bézier, e outro slide-button
 para controlar o grau da curva. Os pontos a serem aproximados devem ter suas coordenadas
@@ -24,7 +24,7 @@ A bezier curve is a interpolation of given *control points*. (A Linear Combinati
 
 This program finds such *control points*.
 
-![Program Output Example](assets/Figure_3.svg)
+![Program Output Example](output/Experiment.svg)
 
 # Data points
 

@@ -1,9 +1,11 @@
-from pathlib import Path
+# todo: show resulting fitted control points
+#   plot error as imshow 2x2 matrix (parameterization method) x (axis)
+
+# todo: save A fig
+
 
 import numpy as np
 from random import randrange
-
-from matplotlib import pyplot as plt
 
 import bezier
 from parameterize import parameterize
@@ -13,8 +15,8 @@ from visualizer import experiment_show
     EXPERIMENT PARAMETERS
 """
 
-n = 4  # amount of data points
-d = 3  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
+n = 5  # amount of data points
+d = n-1  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
 
 rb = 10  # Bounds for random data points
 
@@ -42,22 +44,37 @@ control_points_uniform, error_uniform = bezier.fit(data_points, parameters_unifo
 control_points_chordal, error_chordal = bezier.fit(data_points, parameters_chordal, d)
 
 # sample polynomial
-samples = np.linspace(0, 1, 8 * n)  # 8 samples per segment
+samples = np.linspace(0, 1, 10 * n)  # 8 samples per segment
 
-raw_bezier = np.array([bezier.interpolate(data_points, t) for t in samples])  # data points as control points
 fitted_bezier_uniform = np.array(
-    [bezier.interpolate(control_points_uniform, t) for t in samples])  # fitted control points uniform
+    [bezier.interpolate(control_points_uniform, t) for t in samples]
+)
+fitted_data_points_uniform = np.array(
+    [bezier.interpolate(control_points_uniform, t) for t in parameters_uniform]
+)
+
+
 fitted_bezier_chordal = np.array(
-    [bezier.interpolate(control_points_chordal, t) for t in samples])  # fitted control points chordal
+    [bezier.interpolate(control_points_chordal, t) for t in samples]
+)
+fitted_data_points_chordal = np.array(
+    [bezier.interpolate(control_points_chordal, t) for t in parameters_chordal]
+)
+
 
 """
     PLOTTING
 """
 
 experiment_show(
+    n, d,
     data_points,
+
     fitted_bezier_uniform,
+    fitted_data_points_uniform,
     error_uniform,
+
     fitted_bezier_chordal,
-    error_chordal
+    fitted_data_points_chordal,
+    error_chordal,
 )
