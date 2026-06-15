@@ -25,7 +25,7 @@ def plot_curves(ax, n, d, data_points, uniform_curve, uniform_pts, chordal_curve
 
 
 def plot_error_matrix(ax, error_uniform, error_chordal):
-    # todo: mean error is more insightful, but specification asks for total one
+    # todo: mean error is more insightful
 
     # CREATE COLORMAP
     import matplotlib.colors as mcolors
@@ -45,11 +45,11 @@ def plot_error_matrix(ax, error_uniform, error_chordal):
 
     # LABEL AXES
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(['Error X', 'Error Y'])
+    ax.set_xticklabels(['X', 'Y'])
     ax.set_yticks([0, 1])
     ax.set_yticklabels(['Uniform', 'Chordal'])
 
-    ax.set_title("Total Error")
+    ax.set_title("Average Error")
 
 
 def plot_a_matrix(ax, A):

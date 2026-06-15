@@ -1,140 +1,273 @@
-'> Aproximação de uma curva de Bézier paramétrica de grau arbitrário (n) a um conjunto de
-pontos aleatórios. Coloque um slide-button (variável p) para controlar o número de pontos
-(que será igual a p+1, p>3) a serem aproximados pela curva de Bézier, e outro slide-button
-para controlar o grau da curva. Os pontos a serem aproximados devem ter suas coordenadas
-geradas por um gerador de números aleatórios. Com relação aos parâmetros
-correspondentes aos pontos gerados, teremos dois casos para compararmos:
-(a). Parametrização uniforme: O valor de parâmetro da curva de Bézier correspondente ao i-
-ésimo ponto a ser aproximado é dado por i/p (parametrização uniforme), sendo que o
-primeiro ponto terá valor 0 e o último ponto (p+1-ésimo) terá valor de parâmetro 1.
-(b). Parametrização pelo comprimento dos segmentos: Após a geração aleatória dos pontos,
-calculam-se as distâncias entre os pontos consecutivos, colocando-se numa lista. Em seguida,
-somam-se as distâncias para formar o total. E então cria-se uma lista com as distâncias
-normalizadas por esse total (vão ficar entre 0 e 1). Encontre pelo MMQ as coordenadas dos
-pontos de controle (um MMQ para as abscissas e um MMQ para as ordenadas), desenhe a
-curva e exiba o erro residual total para cada tipo de parametrização, sendo este a soma dos
-erros nas abscissas e nas ordenadas (e =||A x - b|| para cada dimensão, onde x é a solução aproximada encontrada). Projeto em trio.
-# Bezier Fitting
+# Bézier Curve Fitting
 
+Suppose you have $n$ data points `(x, y)` and you want to find the Bézier curve of degree $d$ that best fits them.
 
-
-Suppose you have $n$ data points `(x, y)` and you want to find the Bezier Curve of degree $d$ that better fits them. (If $d \ge n$, its a perfect fit)
-
-A bezier curve is a interpolation of given *control points*. (A Linear Combination with summing-one weights).
+A Bézier curve is an interpolation of given *control points* — a linear combination whose weights always sum to one.
 
 This program finds such *control points*.
 
 ![Program Output Example](output/Experiment.svg)
+*Example for random Data Points*
 
-# Data points
+---
 
-We want to find the curve that contains the data points.
+## Table of Contents
 
-The mission then is to find wich control points define such curve.
+1. [Data Points](#data-points)
+2. [Auto Parameterization](#auto-parameterization)
+   - [Uniform Parameterization](#uniform-parameterization-μ--0)
+   - [Chordal Parameterization](#chordal-parameterization-μ--1)
+3. [Control Points](#control-points)
+4. [Bernstein Basis Polynomials](#bernstein-basis-polynomials)
+5. [Finding Control Points](#finding-control-points-fitting-a-bézier-curve)
+   - [Setting Up the Linear System](#setting-up-the-linear-system)
+   - [Solving the Linear System](#solving-the-linear-system)
+   - [Least Squares Method (LSM)](#least-squares-method-lsm)
+6. [Bézier Interpolation (de Casteljau)](#bézier-interpolation-de-casteljau-algorithm)
+7. [Residual Error](#residual-error)
+8. [Plotting](#plotting)
+9. [Running the Program](#running-the-program)
 
-data points are randomly generated
+---
+
+## Data Points
+
+We have a sequence of $n$ points in 2D space:
+
+$$\vec{d} = \left[ D_0,\ D_1,\ \dots,\ D_{n-1} \right], \quad D_i = (x_i,\ y_i)$$
+
+These are **randomly generated** within a bounding box. The goal is to find which control points define a Bézier curve that passes through — or as close as possible to — all of them.
+
+---
 
 ## Auto Parameterization
 
-The parameter $t$ is an abstract value assigned to each data point that controls how the curve is paced.
+A Bézier curve is not a function of space — it is a function of an abstract parameter $t \in [0, 1]$.
 
-Although the resulting curve is clearly not a polynomial, each coordinate axis of it can be expressed as a polynomial function of $t$:
+Each coordinate axis can be expressed as a polynomial in $t$:
 
-$$B(t) = (X(t), Y(t))$$
+$$B(t) = \bigl(X(t),\ Y(t)\bigr)$$
 
-The formula for assigning a $t_i$ for each $D_i$ in a vector of data points $\vec{d} = \left[ D_i = (x_i, y_i) \right] $ is:
+To fit a curve to our data points, we must assign a parameter value $t_i$ to each $D_i$. This is called **parameterization**, and the choice of strategy significantly affects the quality of the fit.
+
+The general formula is:
 
 $$t_0 = 0$$
 
-$$t_{i+1} = t_i + d_i$$
+$$t_{i} = t_{i-1} + \|D_{i} - D_{i-1}\|^{\mu}, \quad \mu \in [0, 1]$$
 
-$$d_{i}=\|D_{i+1}-D_{i}\|{}^{\mu },\quad \mu \in [0,1]$$
+After computing all increments, the values are **normalized** by dividing by $t_{n-1}$, so that $t_0 = 0$ and $t_{n-1} = 1$.
 
-The exponent $\mu$ controls the relationship between chord length and parameter spacing.
+The exponent $\mu$ controls how strongly chord length influences the parameter spacing:
 
-**If** $\mu = 0$, parameterization gets *uniform*.
+### Uniform Parameterization ($\mu = 0$)
 
-**If** $\mu = 1$, parameterization gets *chordal*.
+When $\mu = 0$, the distance term $\|D_{i} - D_{i-1}\|^0 = 1$ regardless of actual spacing, giving:
 
-# Control Points
+$$t_i = \frac{i}{n - 1}$$
 
-Control points define the curve shape, although the curve does not necessairly contains them. (Except for the first and last one).
+Parameters are **evenly spaced**. This is simple but ignores how far apart the data points actually are. It can cause bunching or stretching of the curve where data points are unevenly distributed.
 
-The bezier curve is expressed as a interpolation (linear combination) of control points.
+### Chordal Parameterization ($\mu = 1$)
 
-# Finding Control Points (Fitting a Bezier Curve)
+When $\mu = 1$, the increment equals the Euclidean distance between consecutive points:
 
-The control points are found by creating a $ (n \times d) $ linear system, where each equation set the condition that the bezier curve contains a data point.
+$$t_i = t_{i-1} + \|D_{i} - D_{i-1}\|$$
 
-$$
-B(t_i) = D_i
-$$
-for each Data Point $D_i$ and its respective Parameter $t_i$ among $n$.
+(followed by normalization). The parameter spacing **reflects the actual chord lengths**, so the curve is paced proportionally to the geometry of the data. This generally produces a more natural fit.
 
-Where:
+> **In code** (`parameterize.py`): the `micro` argument controls $\mu$. Passing `0` gives uniform, passing `1` gives chordal.
 
+---
 
-$$
-B(t) = \sum_{j=0}^{n} b_{j,d}(t) \cdot C_j
-$$
+## Control Points
 
-is the Bezier Curve equation,
+Control points $C_0, C_1, \dots, C_{d-1}$ are the "handles" that define the shape of a Bézier curve. The curve does **not** necessarily pass through them — it is pulled *towards* them.
 
-$$
-C_j
-$$
+The only exceptions are the **first** ($C_0$) and **last** ($C_{d-1}$) control points, which the curve always interpolates exactly. This can be trivially deducted from the mathematical definition of the curve.
 
-is the $j$-th control point we want find,
+A degree-$d$ Bézier curve has exactly $d$ control points. The relationship between $d$ and $n$ determines whether the fit can be exact:
 
-$$
-b_{j,d}(t) = \binom{d}{j} \cdot t^j \cdot (1-t)^{d-j}
-$$
+| Condition | Meaning |
+|-----------|---------|
+| $d = n$ | Exact fit — the curve passes through every data point |
+| $d < n$ | Under-determined — best approximate fit via Least Squares |
+| $d > n$ | Over-determined — the curve passes through every data point with redundant loops and turns |
 
-Is the bernstein basis polinomial: The interpolation weight for each control point in the Bezier Equation.
+---
 
+## Bernstein Basis Polynomials
 
-### Setting up the linear system
+The Bernstein basis polynomials are the **weights** used to blend control points into the curve. For degree $d-1$ and index $j$:
 
+$$b_{j,\,d-1}(t) = \binom{d-1}{j} \cdot t^{j} \cdot (1-t)^{d-1-j}, \quad j = 0, 1, \dots, d-1$$
 
-$$
-A \cdot \vec{c} = \vec{d}
-$$
+They have two key properties:
 
-where
+**Non-negativity:** $b_{j,d-1}(t) \geq 0$ for all $t \in [0,1]$
 
-$A$ is the coefficients matrix such that $a_{ij}= b_{j,d-1}(t_i)$ for each row $i$ and column $j$.
+**Partition of unity:** $\displaystyle\sum_{j=0}^{d-1} b_{j,\,d-1}(t) = 1$ for all $t$
 
-$\vec{c}$ is the vector containing the control points $C_i$.
+This guarantees that the curve lies within the **convex hull** of its control points — a very useful geometric property.
 
-$\vec{d}$ is the vector containg the data points $D_i$.
+> **In code** (`bernstein.py`): `bernstein_basis(n, j, t)` computes $b_{j,n}(t)$, and `get_coefficients_matrix` builds the full $A$ matrix by evaluating all basis polynomials at each parameter value.
 
-### SOlving the linear system
+---
 
+## Finding Control Points (Fitting a Bézier Curve)
 
-**If** $d < n$, the Bezier Curve can't fit exactly all points (There is more Data Points than Control Points, so the Curve Degree is not enough).
+We want to find control points $C_0, \dots, C_{d-1}$ such that the curve passes through (or near) each data point $D_i$ at its assigned parameter $t_i$:
 
-The coefficients matrix $(n \times d)$ is retangular
-and the system is solved using the Least Squares Method.
+$$B(t_i) = D_i \quad \text{for each } i = 0, 1, \dots, n-1$$
 
+Expanding the Bézier equation:
 
-**If** $d = n$, the Bezier Curve fits exactly all points.
+$$B(t_i) = \sum_{j=0}^{d-1} b_{j,\,d-1}(t_i) \cdot C_j = D_i$$
 
-The coefficients matrix $(n \times d)$ is square and invertible.
+This gives one equation per data point. Together, they form a linear system.
 
-**If** $d > n$, the Bezier Curve has more degrees (Control Points) than needed to fit the Data Points.
+### Setting Up the Linear System
 
+$$A \cdot \vec{c} = \vec{d}$$
 
-The coefficients matrix $(n \times d)$ is retangular
-and the system is solved using the Least Squares Method.
+where:
 
-### LSM
+- $A$ is the $(n \times d)$ **coefficients matrix**, with entries:
 
-# Bezier interpolation
+$$a_{ij} = b_{j,\,d-1}(t_i)$$
 
-The control points can be recursivelly interpolated by:
+Each row $i$ corresponds to a data point; each column $j$ to a control point.
 
-$B_{P_0}(t) = P_0$
+$$A = \begin{bmatrix}
+b_{0,d-1}(t_0) & b_{1,d-1}(t_0) & \cdots & b_{d-1,d-1}(t_0) \\
+b_{0,d-1}(t_1) & b_{1,d-1}(t_1) & \cdots & b_{d-1,d-1}(t_1) \\
+\vdots & \vdots & \ddots & \vdots \\
+b_{0,d-1}(t_{n-1}) & b_{1,d-1}(t_{n-1}) & \cdots & b_{d-1,d-1}(t_{n-1})
+\end{bmatrix}$$
 
-$B(t) = B_{P_0...P_n}(t) = (1-t) \cdot B_{P_0...P_{n-1}}(t) + (t) \cdot B_{P_1...P_n}(t)$
+- $\vec{c} = [C_0,\ C_1,\ \dots,\ C_{d-1}]^\top$ is the vector of **control points** to find.
 
-# Plotting
+- $\vec{d} = [D_0,\ D_1,\ \dots,\ D_{n-1}]^\top$ is the vector of **data points**.
+
+Since $(x, y)$ are independent, the system is solved **separately for each axis** — but in practice the matrix $A$ is the same for both, so the solve handles both columns of $\vec{d}$ simultaneously.
+
+### Solving the Linear System
+
+**Case $d = n$:** The matrix $A$ is square $(n \times n)$ and — assuming distinct parameter values — invertible. The system has a **unique exact solution**:
+
+$$\vec{c} = A^{-1} \vec{d}$$
+
+The curve passes exactly through every data point.
+
+**Case $d \neq n$:** The matrix $A$ is rectangular and the system is generally inconsistent. We instead solve the **normal equations** to minimize the residual in the least-squares sense:
+
+$$A^\top A \cdot \vec{c} = A^\top \vec{d}$$
+
+$$\vec{c} = (A^\top A)^{-1} A^\top \vec{d}$$
+
+> **In code** (`bezier.py`): `fit()` calls `np.linalg.solve(A, d)` for the square case, and `np.linalg.solve(A.T @ A, A.T @ d)` for the rectangular case.
+
+### Least Squares Method (LSM)
+
+When there are more data points than control points ($d < n$), the curve cannot pass through all of them exactly. The Least Squares Method finds the control points that **minimize the sum of squared distances** between the curve and the data points:
+
+$$\min_{\vec{c}} \| A \vec{c} - \vec{d} \|^2$$
+
+Taking the gradient and setting it to zero yields the **normal equations** above. The solution is the **orthogonal projection** of $\vec{d}$ onto the column space of $A$.
+
+Geometrically: among all Bézier curves of degree $d$, we pick the one that is *closest* to the data in the least-squares sense.
+
+---
+
+## Bézier Interpolation (de Casteljau Algorithm)
+
+Once the control points are known, we evaluate the curve at any $t$ using the **de Casteljau algorithm** — a numerically stable recursive scheme:
+
+$$B_{[P_i]}(t) = P_i \quad \text{(base case)}$$
+
+$$B_{[P_i, \dots, P_k]}(t) = (1-t) \cdot B_{[P_i, \dots, P_{k-1}]}(t) + t \cdot B_{[P_{i+1}, \dots, P_k]}(t)$$
+
+At each level, each pair of adjacent points is **linearly interpolated** by $t$. After $d-1$ levels, a single point remains — the curve point $B(t)$.
+
+For example, with 3 control points $P_0, P_1, P_2$:
+
+$$Q_0 = (1-t)\,P_0 + t\,P_1, \quad Q_1 = (1-t)\,P_1 + t\,P_2$$
+
+$$B(t) = (1-t)\,Q_0 + t\,Q_1$$
+
+This is equivalent to the explicit Bernstein formula but avoids numerical instability for high degrees.
+
+> **In code** (`bezier.py`): `interpolate(cps, t)` implements this recursion directly. It is called over a dense `linspace` of $t$ values to draw the smooth curve.
+
+---
+
+## Residual Error
+
+After fitting, we measure how well the curve reproduces the data points. The residual error for each axis is:
+
+$$e = \frac{\| A\,\vec{c} - \vec{d} \|}{n}$$
+
+This is the **mean Euclidean residual** — the average distance between where the curve says a data point should be and where it actually is. A value of $0$ means a perfect fit.
+
+The program computes this separately for $X$ and $Y$, and for both parameterization methods, displaying all four values in a $2 \times 2$ heatmap:
+
+|  | $X$ error | $Y$ error |
+|---|---|---|
+| **Uniform** | $e_{u,x}$ | $e_{u,y}$ |
+| **Chordal** | $e_{c,x}$ | $e_{c,y}$ |
+
+Darker red cells indicate larger error. Comparing rows reveals which parameterization better captures the data's geometry.
+
+> **In code** (`bezier.py`): the error is returned by `fit()` as `np.linalg.norm((A @ control_points) - data_points, axis=0) / n`.
+
+---
+
+## Plotting
+
+The visualizer (`visualizer.py`) produces a two-panel figure:
+
+**Left panel — Curve Plot:**
+- Orange dots and dashed line: the original random data points in order.
+- Cyan curve and dots: the Bézier curve fitted with **uniform** parameterization, and where it evaluates at each $t_i$.
+- Magenta curve and dots: the Bézier curve fitted with **chordal** parameterization.
+
+This lets you visually compare how well each method hugs the data.
+
+**Right panel — Error Heatmap:**
+- A $2 \times 2$ image where rows are parameterization strategies and columns are coordinate axes.
+- Cell values are the mean residual errors.
+- White = low error, red = high error.
+
+The figure is saved to `output/Experiment.svg`.
+
+---
+
+## Running the Program
+
+**Requirements:**
+```
+numpy
+matplotlib
+```
+
+Install with:
+```bash
+pip install numpy matplotlib
+```
+
+**Run:**
+```bash
+python main.py
+```
+
+**Key parameters** (edit in `main.py`):
+
+| Variable | Meaning | Default |
+|----------|---------|---------|
+| `n` | Number of random data points | `5` |
+| `d` | Number of control points (curve degree) | `n - 1` |
+| `rb` | Coordinate range for random points | `10` |
+
+Set `d = n` for an exact interpolating fit, or `d < n` for a smoothed least-squares approximation.
+
+The output figure is saved to `output/Experiment.svg` and also displayed.

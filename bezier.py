@@ -25,12 +25,12 @@ def fit(data_points, parameters, d):
     if n == d:
         # A * c = d or
         control_points = np.linalg.solve(A, data_points)
-        return control_points, np.linalg.norm((A@control_points)-data_points, axis=0)
+        return control_points, np.linalg.norm((A@control_points)-data_points, axis=0)/n
 
     elif n != d:
         # (A^T) * A * c = (A^T) * d
 
         control_points = np.linalg.solve(A.T @ A, A.T @ data_points)
-        return control_points, np.linalg.norm((A@control_points)-data_points, axis=0)
+        return control_points, np.linalg.norm((A@control_points)-data_points, axis=0)/n
 
     return None
