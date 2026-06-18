@@ -6,7 +6,7 @@ A Bézier curve is an interpolation of given *control points* — a linear combi
 
 This program finds such *control points*.
 
-![Program Output Example](output/Experiment.svg)
+![Program Output Example](assets/overdetermined.svg)
 *Example for random Data Points*
 
 ---
@@ -84,15 +84,15 @@ $$t_i = t_{i-1} + \|D_{i} - D_{i-1}\|$$
 
 Control points $C_0, C_1, \dots, C_{d-1}$ are the "handles" that define the shape of a Bézier curve. The curve does **not** necessarily pass through them — it is pulled *towards* them.
 
-The only exceptions are the **first** ($C_0$) and **last** ($C_{d-1}$) control points, which the curve always interpolates exactly. This can be trivially deducted from the mathematical definition of the curve.
+The only exceptions are the **first** ($C_0$) and **last** ($C_{d-1}$) control points, which the curve always interpolates exactly. This can be trivially deduced from the mathematical definition of the curve.
 
-A degree-$d$ Bézier curve has exactly $d$ control points. The relationship between $d$ and $n$ determines whether the fit can be exact:
+A degree $d-1$ Bézier curve has exactly $d$ control points. The relationship between $d$ and $n$ determines whether the fit can be exact:
 
-| Condition | Meaning |
-|-----------|---------|
-| $d = n$ | Exact fit — the curve passes through every data point |
-| $d < n$ | Under-determined — best approximate fit via Least Squares |
-| $d > n$ | Over-determined — the curve passes through every data point with redundant loops and turns |
+| Condition | Meaning                                                                                              |
+|-----------|------------------------------------------------------------------------------------------------------|
+| $n = d$   | Determined — the curve passes through every data point                                               |
+| $n > d$   | Over-determined — best approximate fit via Least Squares                                             |
+| $n < d$   | Under-determined — the curve passes through every data point with possible redundant loops and turns |
 
 ---
 
@@ -116,7 +116,8 @@ This guarantees that the curve lies within the **convex hull** of its control po
 
 ## Finding Control Points (Fitting a Bézier Curve)
 
-We want to find control points $C_0, \dots, C_{d-1}$ such that the curve passes through (or near) each data point $D_i$ at its assigned parameter $t_i$:
+We want to find control points $C_0, \dots, C_{d-1}$ such that 
+the curve passes through (or near) each data point $D_i$ at its assigned parameter $t_i$:
 
 $$B(t_i) = D_i \quad \text{for each } i = 0, 1, \dots, n-1$$
 
@@ -138,12 +139,14 @@ $$a_{ij} = b_{j,\,d-1}(t_i)$$
 
 Each row $i$ corresponds to a data point; each column $j$ to a control point.
 
-$$A = \begin{bmatrix}
+$$
+A = \begin{bmatrix}
 b_{0,d-1}(t_0) & b_{1,d-1}(t_0) & \cdots & b_{d-1,d-1}(t_0) \\
 b_{0,d-1}(t_1) & b_{1,d-1}(t_1) & \cdots & b_{d-1,d-1}(t_1) \\
 \vdots & \vdots & \ddots & \vdots \\
 b_{0,d-1}(t_{n-1}) & b_{1,d-1}(t_{n-1}) & \cdots & b_{d-1,d-1}(t_{n-1})
-\end{bmatrix}$$
+\end{bmatrix}
+$$
 
 - $\vec{c} = [C_0,\ C_1,\ \dots,\ C_{d-1}]^\top$ is the vector of **control points** to find.
 
@@ -153,19 +156,46 @@ Since $(x, y)$ are independent, the system is solved **separately for each axis*
 
 ### Solving the Linear System
 
-**Case $d = n$:** The matrix $A$ is square $(n \times n)$ and — assuming distinct parameter values — invertible. The system has a **unique exact solution**:
+#### **Case $d = n$:**
+The matrix $A$ is square $(n \times n)$ and — assuming distinct parameter values — invertible. The system has a **unique exact solution**:
 
 $$\vec{c} = A^{-1} \vec{d}$$
 
 The curve passes exactly through every data point.
 
-**Case $d \neq n$:** The matrix $A$ is rectangular and the system is generally inconsistent. We instead solve the **normal equations** to minimize the residual in the least-squares sense:
+![](assets/determined.svg)
+<hr>
+
+#### **Case $n > d$:**
+The matrix $A$ is vertical rectangular and the system is OverDetermined. We instead solve the **normal equations** to minimize the residual in the least-squares sense:
 
 $$A^\top A \cdot \vec{c} = A^\top \vec{d}$$
 
 $$\vec{c} = (A^\top A)^{-1} A^\top \vec{d}$$
 
-> **In code** (`bezier.py`): `fit()` calls `np.linalg.solve(A, d)` for the square case, and `np.linalg.solve(A.T @ A, A.T @ d)` for the rectangular case.
+The resulting curve is the one that **optimally** approximates (with degree $d$) the given set of data points. 
+
+![](assets/overdetermined.svg)
+<hr>
+
+#### **Case $n < d$:**
+The matrix $A$ is horizontal rectangular and the system is UnderDetermined. We solve computing the **pseudo-inverse** by **SVD decomposition**:
+
+$$A = U \Sigma V^{T}$$
+$$A^{\dagger} = V \Sigma^{-1} U^{T}$$
+$$\vec{c} = A^{\dagger} \vec{d}$$
+
+The curve passes exactly through every data point. 
+Exceeding Control Points tends get redundant values such that they do not contribute in interpolation.
+Too many redundant Control Points can accumulate floating point error leading to unnecessary turns and loops.
+
+![](assets/underdetermined_redundant.svg)
+<hr>
+
+> **In code** 
+> (`bezier.py`): `fit()` calls `np.linalg.solve(A, d)` for the Determined case,
+> `np.linalg.solve(A.T @ A, A.T @ d)` for the OverDetermined case,
+> `np.linalg.pinv(A) @ data_points` for the UnderDetermined case.
 
 ### Least Squares Method (LSM)
 
@@ -262,11 +292,11 @@ python main.py
 
 **Key parameters** (edit in `main.py`):
 
-| Variable | Meaning | Default |
-|----------|---------|---------|
-| `n` | Number of random data points | `5` |
-| `d` | Number of control points (curve degree) | `n - 1` |
-| `rb` | Coordinate range for random points | `10` |
+| Variable | Meaning                                     |
+|----------|---------------------------------------------|
+| `n`      | Number of random data points                |
+| `d`      | Number of control points (curve degree + 1) |
+| `rb`     | Coordinate range for random points          |
 
 Set `d = n` for an exact interpolating fit, or `d < n` for a smoothed least-squares approximation.
 

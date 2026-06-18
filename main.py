@@ -16,7 +16,7 @@ from visualizer import experiment_show
 """
 
 n = 4  # amount of data points
-d = n+1  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
+d = 3  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
 
 rb = 10  # Bounds for random data points
 
