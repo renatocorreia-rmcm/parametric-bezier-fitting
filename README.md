@@ -6,7 +6,7 @@ A Bézier curve is an interpolation of given *control points* — a linear combi
 
 This program finds such *control points*.
 
-![Program Output Example](assets/overdetermined.svg)
+![Demo](assets/demo.gif)
 *Example for random Data Points*
 
 ---
@@ -163,7 +163,7 @@ $$\vec{c} = A^{-1} \vec{d}$$
 
 The curve passes exactly through every data point.
 
-![](assets/determined.svg)
+![](assets/Experiment4.svg)
 <hr>
 
 #### **Case $n > d$:**
@@ -175,7 +175,7 @@ $$\vec{c} = (A^\top A)^{-1} A^\top \vec{d}$$
 
 The resulting curve is the one that **optimally** approximates (with degree $d$) the given set of data points. 
 
-![](assets/overdetermined.svg)
+![](assets/Experiment3.svg)
 <hr>
 
 #### **Case $n < d$:**
@@ -189,7 +189,7 @@ The curve passes exactly through every data point.
 Exceeding Control Points tends get redundant values such that they do not contribute in interpolation.
 Too many redundant Control Points can accumulate floating point error leading to unnecessary turns and loops.
 
-![](assets/underdetermined_redundant.svg)
+![](assets/Experiment6.svg)
 <hr>
 
 > **In code** 

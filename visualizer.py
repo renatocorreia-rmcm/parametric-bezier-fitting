@@ -25,7 +25,8 @@ def plot_curves(ax, n, d, data_points, uniform_curve, uniform_pts, chordal_curve
 
 
 def plot_error_matrix(ax, error_uniform, error_chordal):
-    # todo: mean error is more insightful
+    error_uniform = np.round(error_uniform, 3)
+    error_chordal = np.round(error_chordal, 3)
 
     # CREATE COLORMAP
     import matplotlib.colors as mcolors
@@ -95,7 +96,7 @@ def experiment_show(
     plt.tight_layout()
 
     # Save step
-    path = "output/Experiment.svg"
+    path = f"output/Experiment{d}.svg"
     Path("output").mkdir(parents=True, exist_ok=True)
     plt.savefig(path)
     plt.close(fig)

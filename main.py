@@ -16,7 +16,7 @@ from visualizer import experiment_show
 """
 
 n = 4  # amount of data points
-d = 3  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
+d = exp_id  # amount of control points (Bézier curve Degree). If d<n, get best solution by LSM
 
 rb = 10  # Bounds for random data points
 
@@ -24,9 +24,10 @@ rb = 10  # Bounds for random data points
     DATA POINTS
 """
 
-data_points = np.array(
-    [[randrange(-rb, rb), randrange(-rb, rb)] for i in range(n)]
-)
+#data_points = np.array([[randrange(-rb, rb), randrange(-rb, rb)] for i in range(n)])
+
+data_points = np.array([[7, -10],[-7, -10],[-3, -4],[-6, -3],])
+n = len(data_points)  
 
 print('np.array([', end='')
 for data_point in data_points:
